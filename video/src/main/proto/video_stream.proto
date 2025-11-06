@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package streaming;
+
+option java_multiple_files = true;
+option java_package = "com.example.streaming";
+option java_outer_classname = "StreamingProto";
+
+
+service StreamingService {
+
+  rpc UploadVideo(stream UploadVideoRequest) returns (UploadVideoResponse);
+  rpc StreamVideo(StreamVideoRequest) returns (stream StreamVideoResponse);
+}
+
+message UploadVideoRequest {
+  string video_id = 1;
+  bytes chunk_data = 2;
+  int64 chunk_size = 3;
+  bool is_last_chunk = 4;
+}
+
+message UploadVideoResponse {
+  string video_id = 1;
+  string storage_path = 2;
+  int64 total_size = 3;
+  string message = 4;
+}
+
+message StreamVideoRequest {
+  string video_id = 1;
+}
+
+message StreamVideoResponse {
+  bytes chunk_data = 1;
+  int64 chunk_size = 2;
+  bool is_last_chunk = 3;
+}

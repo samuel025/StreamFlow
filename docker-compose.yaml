@@ -1,0 +1,22 @@
+services:
+  postgres:
+    container_name: stream_db
+    image: postgres
+    environment:
+      POSTGRES_USER: samwell
+      POSTGRES_PASSWORD: password
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    ports:
+      - "5732:5432"
+    networks:
+      - stream-net
+    restart: unless-stopped
+
+networks:
+  stream-net:
+    driver: bridge
+
+volumes:
+  postgres:
