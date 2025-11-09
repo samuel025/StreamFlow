@@ -25,5 +25,5 @@ public class Video {
     private String title;
     private String description;
     private Instant createdAt;
-    private String video_id;
+    private String videoId;
 }
