@@ -19,6 +19,7 @@ import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class VideoController {
     private final VideoService videoService;
     @PostMapping("/upload")

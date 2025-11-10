@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VideoStreamGRPC - Video Platform</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        color: #333;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 40px;
+        color: white;
+      }
+
+      .header h1 {
+        font-size: 3rem;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .header p {
+        font-size: 1.2rem;
+        opacity: 0.9;
+      }
+
+      .main-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-bottom: 40px;
+      }
+
+      .card {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease;
+      }
+
+      .card:hover {
+        transform: translateY(-5px);
+      }
+
+      .card h2 {
+        color: #4a5568;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .upload-section {
+        border-left: 4px solid #48bb78;
+      }
+
+      .stream-section {
+        border-left: 4px solid #4299e1;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #2d3748;
+      }
+
+      .form-group input,
+      .form-group textarea {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.3s ease;
+      }
+
+      .form-group input:focus,
+      .form-group textarea:focus {
+        outline: none;
+        border-color: #4299e1;
+        box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+      }
+
+      .file-input-wrapper {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+      }
+
+      .file-input {
+        position: absolute;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+      }
+
+      .file-input-display {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        border: 2px dashed #cbd5e0;
+        border-radius: 8px;
+        background: #f7fafc;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .file-input-display:hover {
+        border-color: #4299e1;
+        background: #ebf8ff;
+      }
+
+      .file-input-display.drag-over {
+        border-color: #48bb78;
+        background: #f0fff4;
+      }
+
+      .btn {
+        background: linear-gradient(135deg, #4299e1, #667eea);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(66, 153, 225, 0.4);
+      }
+
+      .btn:disabled {
+        background: #a0aec0;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #e2e8f0;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 15px 0;
+        display: none;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #48bb78, #38a169);
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+
+      .message {
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+        display: none;
+      }
+
+      .message.success {
+        background: #f0fff4;
+        color: #22543d;
+        border: 1px solid #9ae6b4;
+      }
+
+      .message.error {
+        background: #fed7d7;
+        color: #742a2a;
+        border: 1px solid #fc8181;
+      }
+
+      .video-player {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        margin-top: 20px;
+        display: none;
+      }
+
+      .video-info {
+        background: #f7fafc;
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 20px;
+        display: none;
+      }
+
+      .video-info h3 {
+        color: #2d3748;
+        margin-bottom: 10px;
+      }
+
+      .video-info p {
+        color: #4a5568;
+        line-height: 1.6;
+      }
+
+      .icon {
+        font-size: 1.5rem;
+      }
+
+      @media (max-width: 768px) {
+        .main-content {
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+
+        .header h1 {
+          font-size: 2rem;
+        }
+
+        .card {
+          padding: 20px;
+        }
+      }
+
+      .loading-spinner {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #4299e1;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+        display: none;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🎬 VideoStreamGRPC</h1>
+        <p>Microservices-based Video Streaming Platform</p>
+      </div>
+
+      <div class="main-content">
+        <!-- Upload Section -->
+        <div class="card upload-section">
+          <h2><span class="icon">📤</span> Upload Video</h2>
+          <form id="uploadForm">
+            <div class="form-group">
+              <label for="title">Video Title</label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                required
+                placeholder="Enter video title"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="description">Description</label>
+              <textarea
+                id="description"
+                name="description"
+                rows="3"
+                placeholder="Enter video description"
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Video File</label>
+              <div class="file-input-wrapper">
+                <input
+                  type="file"
+                  id="videoFile"
+                  class="file-input"
+                  accept="video/*"
+                  required
+                />
+                <div class="file-input-display" id="fileDisplay">
+                  <div>
+                    <span class="icon">📁</span>
+                    <p>Drop video file here or click to browse</p>
+                    <small>Supports MP4, AVI, MOV (Max: 500MB)</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="progress-bar" id="uploadProgress">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <button type="submit" class="btn" id="uploadBtn">
+              <span class="loading-spinner" id="uploadSpinner"></span>
+              <span id="uploadBtnText">Upload Video</span>
+            </button>
+          </form>
+
+          <div class="message" id="uploadMessage"></div>
+        </div>
+
+        <!-- Stream Section -->
+        <div class="card stream-section">
+          <h2><span class="icon">🎥</span> Stream Video</h2>
+          <div class="form-group">
+            <label for="videoId">Video ID</label>
+            <input
+              type="text"
+              id="videoId"
+              placeholder="Enter video ID (e.g., VID-1234567890123)"
+            />
+          </div>
+
+          <button
+            type="button"
+            class="btn"
+            id="streamBtn"
+            onclick="streamVideo()"
+          >
+            <span class="loading-spinner" id="streamSpinner"></span>
+            <span id="streamBtnText">Stream Video</span>
+          </button>
+
+          <div class="message" id="streamMessage"></div>
+
+          <video id="videoPlayer" class="video-player" controls>
+            Your browser does not support the video tag.
+          </video>
+
+          <div class="video-info" id="videoInfo">
+            <h3 id="videoTitle"></h3>
+            <p id="videoDescription"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API_BASE_URL = "http://localhost:8090";
+
+      // File upload handling
+      const fileInput = document.getElementById("videoFile");
+      const fileDisplay = document.getElementById("fileDisplay");
+      const uploadForm = document.getElementById("uploadForm");
+      const uploadBtn = document.getElementById("uploadBtn");
+      const uploadSpinner = document.getElementById("uploadSpinner");
+      const uploadBtnText = document.getElementById("uploadBtnText");
+      const uploadProgress = document.getElementById("uploadProgress");
+      const progressFill = document.getElementById("progressFill");
+      const uploadMessage = document.getElementById("uploadMessage");
+
+      // Stream handling
+      const videoPlayer = document.getElementById("videoPlayer");
+      const videoInfo = document.getElementById("videoInfo");
+      const streamBtn = document.getElementById("streamBtn");
+      const streamSpinner = document.getElementById("streamSpinner");
+      const streamBtnText = document.getElementById("streamBtnText");
+      const streamMessage = document.getElementById("streamMessage");
+
+      // File drag and drop
+      fileDisplay.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        fileDisplay.classList.add("drag-over");
+      });
+
+      fileDisplay.addEventListener("dragleave", () => {
+        fileDisplay.classList.remove("drag-over");
+      });
+
+      fileDisplay.addEventListener("drop", (e) => {
+        e.preventDefault();
+        fileDisplay.classList.remove("drag-over");
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          fileInput.files = files;
+          updateFileDisplay(files[0]);
+        }
+      });
+
+      fileInput.addEventListener("change", (e) => {
+        if (e.target.files.length > 0) {
+          updateFileDisplay(e.target.files[0]);
+        }
+      });
+
+      function updateFileDisplay(file) {
+        const fileSize = (file.size / (1024 * 1024)).toFixed(2);
+        fileDisplay.innerHTML = `
+                <div>
+                    <span class="icon">🎬</span>
+                    <p><strong>${file.name}</strong></p>
+                    <small>${fileSize} MB</small>
+                </div>
+            `;
+      }
+
+      // Upload form submission
+      uploadForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const title = document.getElementById("title").value;
+        const description = document.getElementById("description").value;
+        const file = fileInput.files[0];
+
+        if (!file) {
+          showMessage("uploadMessage", "Please select a video file", "error");
+          return;
+        }
+
+        setUploadLoading(true);
+        showProgress(true);
+        hideMessage("uploadMessage");
+
+        try {
+          const formData = new FormData();
+          formData.append("data", JSON.stringify({ title, description }));
+          formData.append("file", file);
+
+          const xhr = new XMLHttpRequest();
+
+          xhr.upload.addEventListener("progress", (e) => {
+            if (e.lengthComputable) {
+              const percentComplete = (e.loaded / e.total) * 100;
+              updateProgress(percentComplete);
+            }
+          });
+
+          xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+              setUploadLoading(false);
+              showProgress(false);
+
+              if (xhr.status === 200) {
+                const response = JSON.parse(xhr.responseText);
+                showMessage("uploadMessage", response.message, "success");
+                uploadForm.reset();
+                fileDisplay.innerHTML = `
+                                <div>
+                                    <span class="icon">📁</span>
+                                    <p>Drop video file here or click to browse</p>
+                                    <small>Supports MP4, AVI, MOV (Max: 500MB)</small>
+                                </div>
+                            `;
+              } else {
+                showMessage(
+                  "uploadMessage",
+                  "Upload failed. Please try again.",
+                  "error"
+                );
+              }
+            }
+          };
+
+          xhr.open("POST", `${API_BASE_URL}/upload`);
+          xhr.send(formData);
+        } catch (error) {
+          setUploadLoading(false);
+          showProgress(false);
+          showMessage(
+            "uploadMessage",
+            `Upload failed: ${error.message}`,
+            "error"
+          );
+        }
+      });
+
+      // Stream video function
+      async function streamVideo() {
+        const videoId = document.getElementById("videoId").value.trim();
+
+        if (!videoId) {
+          showMessage("streamMessage", "Please enter a video ID", "error");
+          return;
+        }
+
+        setStreamLoading(true);
+        hideMessage("streamMessage");
+        videoPlayer.style.display = "none";
+        videoInfo.style.display = "none";
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/stream/${videoId}`);
+
+          if (response.ok) {
+            const blob = await response.blob();
+            const videoUrl = URL.createObjectURL(blob);
+
+            videoPlayer.src = videoUrl;
+            videoPlayer.style.display = "block";
+
+            // Show video info (you can enhance this by fetching metadata)
+            document.getElementById(
+              "videoTitle"
+            ).textContent = `Video: ${videoId}`;
+            document.getElementById("videoDescription").textContent =
+              "Streaming video content";
+            videoInfo.style.display = "block";
+
+            showMessage(
+              "streamMessage",
+              "Video loaded successfully!",
+              "success"
+            );
+          } else {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+        } catch (error) {
+          showMessage(
+            "streamMessage",
+            `Failed to load video: ${error.message}`,
+            "error"
+          );
+        } finally {
+          setStreamLoading(false);
+        }
+      }
+
+      // Utility functions
+      function setUploadLoading(loading) {
+        uploadBtn.disabled = loading;
+        uploadSpinner.style.display = loading ? "inline-block" : "none";
+        uploadBtnText.textContent = loading ? "Uploading..." : "Upload Video";
+      }
+
+      function setStreamLoading(loading) {
+        streamBtn.disabled = loading;
+        streamSpinner.style.display = loading ? "inline-block" : "none";
+        streamBtnText.textContent = loading ? "Loading..." : "Stream Video";
+      }
+
+      function showProgress(show) {
+        uploadProgress.style.display = show ? "block" : "none";
+        if (!show) updateProgress(0);
+      }
+
+      function updateProgress(percent) {
+        progressFill.style.width = `${percent}%`;
+      }
+
+      function showMessage(elementId, message, type) {
+        const messageEl = document.getElementById(elementId);
+        messageEl.textContent = message;
+        messageEl.className = `message ${type}`;
+        messageEl.style.display = "block";
+      }
+
+      function hideMessage(elementId) {
+        document.getElementById(elementId).style.display = "none";
+      }
+
+      // Enable Enter key for streaming
+      document.getElementById("videoId").addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          streamVideo();
+        }
+      });
+    </script>
+  </body>
+</html>
